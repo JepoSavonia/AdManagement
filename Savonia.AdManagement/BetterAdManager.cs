@@ -65,9 +65,7 @@ namespace Savonia.AdManagement
         public void ResetPassword(String userName, String password)
         {
             var user = FindUserByUsername(userName);
-
             user.SetPassword(password);
-
             user.Save();
         }
 
