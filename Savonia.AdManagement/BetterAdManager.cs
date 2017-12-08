@@ -107,22 +107,44 @@ namespace Savonia.AdManagement
                     _config.Password);
 
             SavoniaUserPrincipal up = new SavoniaUserPrincipal(context);
-            
-            up.SamAccountName = userObject.Username;
-            up.GivenName = userObject.Name;
-            up.Surname = userObject.Surname;
-            up.DisplayName = userObject.Name + " " + userObject.Surname;
-            up.Name = userObject.Name + " " + userObject.Surname;
-            //up.EmailAddress = userObject.Email;
-            up.Enabled = userObject.IsEnabled;
-            up.SetPassword(userObject.Password);
-            up.UserPrincipalName = userObject.Name + "." + userObject.Surname + "@aluenimi3.local";
-            up.Save();
+
+                up.SamAccountName = userObject.Username;
+                up.GivenName = userObject.Name;
+                up.Surname = userObject.Surname;
+                up.DisplayName = userObject.Name + " " + userObject.Surname;
+                up.Name = userObject.Name + " " + userObject.Surname;
+                //up.EmailAddress = userObject.Email;
+                up.Enabled = userObject.IsEnabled;
+                up.SetPassword(userObject.Password);
+                up.UserPrincipalName = userObject.Name + "." + userObject.Surname + "@aluenimi3.local";
+                up.Save();
+
         }
 
         public SavoniaUserObject FindUser(string username)
         {
             var user = FindUserByUsername(username);
+            if (user == null)
+            {
+                return null;
+            }
+            SavoniaUserObject su = new SavoniaUserObject();
+            su.DisplayName = user.DisplayName;
+            su.Dn = user.DistinguishedName;
+            su.Email = user.EmailAddress;
+            su.IsEnabled = user.Enabled.GetValueOrDefault();
+            su.Path = ((System.DirectoryServices.DirectoryEntry)user.GetUnderlyingObject()).Path;
+            su.Title = user.Title;
+            su.Username = user.SamAccountName;
+            su.Name = user.GivenName;
+            su.Surname = user.Surname;
+            user.Dispose();
+            return su;
+        }
+
+        public SavoniaUserObject FindAdminUser(string username)
+        {
+            var user = FindAdminUserByUsername(username);
             if (user == null)
             {
                 return null;
@@ -152,6 +174,54 @@ namespace Savonia.AdManagement
             PrincipalSearcher search = new PrincipalSearcher(up);
             SavoniaUserPrincipal result = (SavoniaUserPrincipal)search.FindOne();
             search.Dispose();
+
+            return result;
+        }
+
+        private SavoniaUserPrincipal FindAdminUserByUsername(string username)
+        {
+            var context = new PrincipalContext(
+                    ContextType.Domain,
+                    _config.Domain,
+                    "OU=Users,OU=Admin,OU=DE,DC=ALUENIMI3,DC=LOCAL",
+                    ContextOptions.Negotiate,
+                    _config.Username,
+                    _config.Password);
+
+            // search model
+            SavoniaUserPrincipal up = new SavoniaUserPrincipal(context);
+            up.SamAccountName = username;
+
+            // search
+            PrincipalSearcher search = new PrincipalSearcher(up);
+            SavoniaUserPrincipal result = (SavoniaUserPrincipal)search.FindOne();
+            search.Dispose();
+
+            return result;
+        }
+
+        public SavoniaUserObject FindUserByEmail(string email)
+        {
+            SavoniaUserObject su = new SavoniaUserObject();
+            var result = su;
+            var context = GetSearchRoot();
+
+            SavoniaUserPrincipal up = new SavoniaUserPrincipal(context);
+            up.EmailAddress = email;
+            PrincipalSearcher search = new PrincipalSearcher(up);
+            SavoniaUserPrincipal user = (SavoniaUserPrincipal)search.FindOne();
+
+            if (user != null)
+            {
+                su.Email = user.EmailAddress;
+                su.Username = user.SamAccountName;
+                result = su;
+                user.Dispose();
+            }
+            else
+            {
+                result = null;
+            }
 
             return result;
         }
