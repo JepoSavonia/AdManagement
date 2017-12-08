@@ -98,24 +98,35 @@ namespace Savonia.AdManagement
 
         public void AddUser(SavoniaUserObject userObject) {
 
-            var context = GetSearchRoot();
-            
+            var context = new PrincipalContext(
+                    ContextType.Domain,
+                    _config.Domain,
+                    "OU=New,OU=Users,OU=DE,DC=ALUENIMI3,DC=LOCAL",
+                    ContextOptions.Negotiate,
+                    _config.Username,
+                    _config.Password);
+
             SavoniaUserPrincipal up = new SavoniaUserPrincipal(context);
             
             up.SamAccountName = userObject.Username;
             up.GivenName = userObject.Name;
             up.Surname = userObject.Surname;
             up.DisplayName = userObject.Name + " " + userObject.Surname;
-            up.EmailAddress = userObject.Email;
+            up.Name = userObject.Name + " " + userObject.Surname;
+            //up.EmailAddress = userObject.Email;
             up.Enabled = userObject.IsEnabled;
             up.SetPassword(userObject.Password);
-
+            up.UserPrincipalName = userObject.Name + "." + userObject.Surname + "@aluenimi3.local";
             up.Save();
         }
 
         public SavoniaUserObject FindUser(string username)
         {
             var user = FindUserByUsername(username);
+            if (user == null)
+            {
+                return null;
+            }
             SavoniaUserObject su = new SavoniaUserObject();
             su.DisplayName = user.DisplayName;
             su.Dn = user.DistinguishedName;
