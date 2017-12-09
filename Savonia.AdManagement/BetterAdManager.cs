@@ -55,8 +55,36 @@ namespace Savonia.AdManagement
             AdUser.SamAccountName = user.Username;
             AdUser.GivenName = user.Name;
             AdUser.Surname = user.Surname;
-            AdUser.EmailAddress = user.Email;
+            //AdUser.EmailAddress = user.Email;
+            AdUser.Title = user.Title;
             AdUser.Enabled = user.IsEnabled;
+
+            // tallennetaan muutokset
+            AdUser.Save();
+        }
+
+        public void UpdateAdminUser(SavoniaUserObject user)
+        {
+            // tarkista syöte
+            if (null == user || string.IsNullOrEmpty(user.Username))
+            {
+                //return;
+                // viallinen syöte
+                throw new ArgumentNullException(nameof(user));
+            }
+            var AdUser = FindAdminUserByUsername(user.Username);
+            if (null == AdUser)
+            {
+                throw new ArgumentException($"User \"{user.Username}\" not found on AD.");
+            }
+
+            AdUser.SamAccountName = user.Username;
+            AdUser.GivenName = user.Name;
+            AdUser.Surname = user.Surname;
+            AdUser.Title = user.Title;
+            
+            //AdUser.EmailAddress = user.Email;
+            //AdUser.Enabled = user.IsEnabled;
 
             // tallennetaan muutokset
             AdUser.Save();
